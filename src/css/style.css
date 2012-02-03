@@ -1,0 +1,25 @@
+Panel {
+       
+}
+Alert{
+color : #124332;
+background-color: #ffffff;
+header-colors : #243322, #243322;
+header-height:19;
+drop-shadow-enabled: true;
+drop-shadow-color :#243322;
+corner-radius :6;
+border-style :solid;
+border-thickness: 1;
+border-color : #243322;
+footer-colors : #243322, #ffffff;
+font-size: 14px;
+title-style-name : "title";
+}
+
+.title{
+font-family :Verdana;
+font-size :13;
+font-weight :bold;
+color :#ffffff;
+}

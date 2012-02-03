@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" 
+    xmlns:onin="com.malebolgia.onin.*"	
+	layout="vertical" 
+	creationComplete="init();"  height="1000" color="#050404" backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#FFFFFF, #FAFAFA]">
+<mx:Style source="css/style.css"/>
+<mx:Script>
+	<![CDATA[
+		import mx.formatters.NumberBaseRoundType;
+            import mx.collections.ArrayCollection;
+            import mx.formatters.DateFormatter; 
+            import mx.controls.DateField;
+            import mx.events.ValidationResultEvent;
+		    import mx.controls.Alert;
+		    
+            /* custom validator */
+            // import com.malebolgia.onin;       
+		    /* custom validator */
+		    
+		    //Globals   */
+		    //Number of millisecondsPerDay to set defaults
+            private const millisecondsPerDay:int = 1000 * 60 * 60 * 24;
+
+		    [Bindable]
+            public var sex:ArrayCollection = new ArrayCollection(
+                [ {label:"Male", data:1}, 
+                  {label:"Female", data:2},
+                  {label:"Male and Female", data:3} ]);
+            
+            [Bindable]
+            public var timeCome:ArrayCollection = new ArrayCollection(
+                [ {label:"12:00 AM", data:1}, 
+                  {label:"01:00 AM", data:2},
+                  {label:"02:00 AM", data:3}, 
+                  {label:"03:00 AM", data:4}, 
+                  {label:"04:00 AM", data:5}, 
+                  {label:"05:00 AM", data:6}, 
+                  {label:"06:00 AM", data:7}, 
+                  {label:"07:00 AM", data:8}, 
+                  {label:"08:00 AM", data:9}, 
+                  {label:"09:00 AM", data:10}, 
+                  {label:"10:00 AM", data:11}, 
+                  {label:"11:00 AM", data:12}, 
+                  {label:"12:00 PM", data:13}, 
+                  {label:"01:00 PM", data:14}, 
+                  {label:"02:00 PM", data:15}, 
+                  {label:"03:00 PM", data:16},
+                  {label:"04:00 PM", data:17}, 
+                  {label:"05:00 PM", data:18}, 
+                  {label:"06:00 PM", data:19}, 
+                  {label:"07:00 PM", data:20}, 
+                  {label:"08:00 PM", data:21}, 
+                  {label:"09:00 PM", data:22},
+                  {label:"10:00 PM", data:23},
+                  {label:"11:00 PM", data:24} ]);
+                  
+            [Bindable]
+            public var priceBran:ArrayCollection = new ArrayCollection(
+                [ {label:"$29 (お１人様料金)<シェア４人部屋>", data:1}, 
+                  {label:"$39 (お１人様料金)<シェア２人部屋>", data:2},
+                  {label:"$49 (お１人様料金)<個室１人部屋>", data:3},
+                  {label:"$59 (お１人様料金)<個室１人部屋>", data:4}, 
+                  {label:"$69 (お２人様料金)<個室２人部屋>ダブルベッド", data:5}, 
+                  {label:"$78 (お２人様料金)<個室２人部屋>２ベッド", data:6},
+                  {label:"$78 (お１人様料金)<個室１人部屋>", data:7} ]);   
+
+           
+           //functions ----------------------------------------------
+           
+           //initialize       
+           private function init():void{
+                var dt:Date = new Date();
+                var dtf:DateFormatter = new DateFormatter;
+                //Default values
+                /* date now  */
+                checkIn.text = dtf1.format(dt);
+                checkIn.selectedDate = dt;
+                 
+                
+                checkOut.text = dtf1.format(dateAdd("date", 1, dt));
+                checkOut.selectedDate = dateAdd("date", 1, dt);
+                
+
+                
+                senderSex.selectedItem.data = 1
+                senderTimeCome.selectedItem.data = 1
+                senderPriceBran.selectedItem.data = 1;
+                
+                calculate();
+                
+               
+            } 
+            
+            //calculate
+            private function calculate():void{
+            	//total_val =  (GetDaysLeft * how_txt.text *  howmany_in.text);
+            	var total_price:Number = 0;
+            	var dtTest:Date; 
+            	var price_plan:Number, getDateDiff:Number = 1, additionalPrice:Number = 0, pricingAdd:Number = 0, i:Number;
+            	var incrementingPrice:Number = 0;
+            	var stringDeb:String = "";
+            	
+			    if (checkIn.selectedDate >  checkOut.selectedDate && checkIn.text != "" && checkOut.text != "" ) {
+            	       Alert.show("注意：日程間違いを防ぐ為、チェックアウトの日程を先に決めてから、チェックインの日程をご決定ください。");
+                }
+                else {
+                	 getDateDiff = calculateDays(checkIn.selectedDate, checkOut.selectedDate);
+                }
+                
+
+               for (i = 0; i <= (getDateDiff - 1); i++){ //From here I can start Calculating
+               	    
+               	    dtTest = dateAdd("date", i, checkIn.selectedDate);
+		                //Additional Price
+		                if ( (dtTest.getMonth() + 1) >= 7 && (dtTest.getMonth() + 1) <= 8  ) {
+		                	 // Alert.show("Day " + dtTest.getMonth().toString() );
+		                	  pricingAdd = 5;
+		                }        
+		                else if ( (dtTest.getMonth() + 1) == 12 && (dtTest.getDate() >= 15 ) && (dtTest.getDate()) <= 31  ){ //December 15 - 31 
+		                      pricingAdd = 10; //Add 10 USD
+		                }
+		                else if ( (dtTest.getMonth() + 1) == 1 && (dtTest.getDate() >= 1 ) && (dtTest.getDate()) <= 10  ){ //Janaury 01 - 10 
+		                      pricingAdd = 10; //Add 10 USD
+		                }
+		                else {
+		                      pricingAdd = 0;
+		                }
+		                
+		               incrementingPrice += pricingAdd;
+		               stringDeb += " " + dtTest + " - Price Add: "  + pricingAdd + "\n";
+		               
+               } //for 
+                
+                 //trace("Price " + (incrementingPrice * getDateDiff).toString() );
+                
+               //checkIn.selectedDate.getDate()
+                
+                if (senderPriceBran.selectedItem.data == 1){
+                	price_plan = 29;
+                	if (getDateDiff == 1){
+                         additionalPrice = 6;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                    
+                    
+                    total_price = (senderHowmany.value * (((price_plan + additionalPrice) * getDateDiff ) + (incrementingPrice)) ); 
+                }
+                else if (senderPriceBran.selectedItem.data == 2){
+                	price_plan = 39;
+                	if (getDateDiff == 1){
+                         additionalPrice = 6;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                     total_price = (senderHowmany.value * (((price_plan + additionalPrice) * getDateDiff ) + (incrementingPrice)) );
+                }
+                 else if (senderPriceBran.selectedItem.data == 3){
+                	price_plan = 49;
+                	if (getDateDiff == 1){
+                         additionalPrice = 6;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                     total_price = (senderHowmany.value * (((price_plan + additionalPrice) * getDateDiff ) + (incrementingPrice)) );
+                     //total_price = ((senderHowmany.value * ((price_plan * getDateDiff ) + (incrementingPrice)) ) + additionalPrice  ); 
+                }
+                 else if (senderPriceBran.selectedItem.data == 4){
+                	price_plan = 59;
+                	if (getDateDiff == 1){
+                         additionalPrice = 6;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                     total_price = (senderHowmany.value * (((price_plan + additionalPrice) * getDateDiff ) + (incrementingPrice)) );
+                     //total_price = ((senderHowmany.value * ((price_plan * getDateDiff ) + (incrementingPrice)) ) + additionalPrice  ); 
+                }
+                 else if (senderPriceBran.selectedItem.data == 5){
+                	price_plan = 69;
+                	if (getDateDiff == 1){
+                        additionalPrice = 12;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                    //total_price = (senderHowmany.value * (((price_plan + additionalPrice) * getDateDiff ) + (incrementingPrice)) );
+                    total_price = ((1 * ((price_plan * getDateDiff ) + (incrementingPrice*2)) ) + additionalPrice  );  
+                }
+                 else if (senderPriceBran.selectedItem.data == 6){
+                	price_plan = 78;
+                	if (getDateDiff == 1){
+                         additionalPrice = 12;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                    total_price = ((1 * ((price_plan * getDateDiff ) + (incrementingPrice*2)) ) + additionalPrice  );  
+                }
+                 else if (senderPriceBran.selectedItem.data == 7){
+                	price_plan = 78;
+                	if (getDateDiff == 1){
+                         additionalPrice = 6;
+                    }
+                    else{
+                    	additionalPrice = 0;
+                    }
+                    total_price = ((1 * ((price_plan * getDateDiff ) + (incrementingPrice*2)) ) + additionalPrice  );  
+                }
+
+                senderTotal.text = currencyFormatter.format(total_price.toString()); //Total Price
+                //senderMemo.text =  stringDeb;
+             
+            }
+                
+            
+            //date functions
+            private function getDaysDifference(minDate:Date, maxDate:Date):uint
+			{
+			// for testing
+			            // var newDate:Date = new Date(2007,9,23);
+			             //var oldDate:Date = new Date (2007, 8, 23);
+			        return Math.ceil(( minDate.getTime() - maxDate.getTime()) /	millisecondsPerDay);
+			
+			}
+			private function calculateDays( start:Date, end:Date ) :int
+			{
+			      var daysInMilliseconds:int = 1000*60*60*24
+			      return (  (end.time - start.time)  / daysInMilliseconds );
+			
+			}  
+			//dateAdd
+			private function dateAdd(datepart:String = "", number:Number = 0, date:Date = null):Date {
+                if (date == null) {
+                    /* Default to current date. */
+                    date = new Date();
+                }
+ 
+                var returnDate:Date = new Date(date.time);;
+ 
+                switch (datepart.toLowerCase()) {
+                    case "fullyear":
+                    case "month":
+                    case "date":
+                    case "hours":
+                    case "minutes":
+                    case "seconds":
+                    case "milliseconds":
+                        returnDate[datepart] += number;
+                        break;
+                    default:
+                        /* Unknown date part, do nothing. */
+                        break;
+                }
+                return returnDate;
+            }
+            //label function
+			private function fnDtfLblFunct(date:Date):String
+			{
+				return dtf1.format(date);
+			}
+			//parse function
+			private function fnDtfPrsFunct(valueString:String,formatString:String):Date
+			{
+				return new Date(DateField.stringToDate(dtf2.format(valueString),"DD/MM/YY"));
+			}    
+			
+			//Send email
+			private function sendMail():void{
+				
+			//senderName
+			//senderEmail
+			//senderSex
+			//senderAddress
+			//senderTel
+			//checkIn
+			//checkOut
+			//senderTimeCome
+			//senderHowmany
+			//senderPriceBran
+			//senderMemo	
+			
+			var _senderName:String = senderName.text;
+	        var _senderEmail:String = senderEmail.text;
+	        var _senderSex:String = senderSex.selectedItem.label;
+	        var _senderAddress:String = senderAddress.text;
+	        var _senderTel:String = senderTel.text;
+	        var _checkIn:String = checkIn.text;
+	        var _checkOut:String = checkOut.text;
+	        var _senderTimeCome:String = senderTimeCome.selectedItem.label;
+	        var _senderHowmany:String = senderHowmany.value.toString();
+	        var _senderPriceBran:String = senderPriceBran.selectedItem.label;
+	        var _senderMemo:String = cleanHTML(senderMemo.htmlText);
+	        var _senderTotal:String = senderTotal.text;
+	        
+	        
+	        //Validation
+			        var evValidMail:ValidationResultEvent = mailValidator.validate();
+					var evValidName:ValidationResultEvent = nameValidator.validate();
+					var evValidAddress:ValidationResultEvent = addressValidator.validate();
+					var evValidTel:ValidationResultEvent = telValidator.validate();
+					
+					if (evValidMail.type == ValidationResultEvent.VALID 
+					&& evValidName.type == ValidationResultEvent.VALID
+					&& evValidAddress.type == ValidationResultEvent.VALID
+					&& evValidTel.type == ValidationResultEvent.VALID
+					){
+						emailService.send({
+						                   senderName: _senderName, 
+						                   senderEmail:_senderEmail, 
+						                   senderSex:_senderSex, 
+						                   senderAddress: _senderAddress,
+						                   senderTel: _senderTel, 
+						                   checkIn:_checkIn, 
+						                   checkOut:_checkOut, 
+						                   senderTimeCome: _senderTimeCome,
+						                   senderHowmany:_senderHowmany, 
+						                   senderPriceBran:_senderPriceBran, 
+						                   senderMemo: _senderMemo,
+						                   senderTotal: _senderTotal
+						                   
+						                   });
+					}
+					else{
+						Alert.show("There are Form errors", "Error");
+					}
+	       
+	        } 
+	        
+		    //For rich text Editor
+		    private function cleanHTML(str:String):String
+			{
+				    var pattern:RegExp = /<TEXTFORMAT.*?>/g;
+				    var str:String = str.replace(pattern, ""); 
+				    //pattern = /<FONT.*?>/g;
+				    //str = str.replace(pattern, ""); 
+				    //pattern = /<\/FONT.*?>/g;
+				    //str = str.replace(pattern, "");
+				    pattern = /<FONT FACE=\"(.*?)\" SIZE=\"(.*?)\" COLOR=\"(.*?)\" .*?>/g;
+				    str = str.replace(pattern, "<span style=\"font-family: $1;font-size: $2;color: $3;\" >");
+				    pattern = /<\/FONT.*?>/g;
+				    str = str.replace(pattern, "</span>"); 
+				    pattern = /<\/TEXTFORMAT.*?>/g;
+				    str = str.replace(pattern, ""); 
+				    return str;
+				}
+	        
+	        private function emailResult():void{
+            Alert.show("We will contact you as soon as possible", "Thank you");
+            clearForm();
+			}
+			
+			private function clearForm():void{
+				//resultLabel.text="";
+				//emailSubject.text="";
+				//emailMessage.text="";
+			var dt:Date = new Date();
+            var dtf:DateFormatter = new DateFormatter;
+            checkIn.text = dtf1.format(dt);
+            checkIn.selectedDate = dt;
+            checkOut.text = dtf1.format(dateAdd("date", 1, dt));
+            checkOut.selectedDate = dateAdd("date", 1, dt);
+			senderName.text = "";
+	        senderEmail.text = "";
+	        senderSex.selectedIndex = 0;
+	        senderAddress.text = "";
+	        senderTel.text = "";
+	        senderTimeCome.selectedIndex = 0;
+	        senderHowmany.value = 1;
+	        senderPriceBran.selectedIndex = 0;
+	        senderMemo.htmlText = "";
+	        
+	        calculate();
+			} 
+                  
+            //Sample Calling the ComboBox Selected
+            /*
+            private function closeHandler(event:Event):void {
+                myLabel.text = "You selected: " +  ComboBox(event.target).selectedItem.label;
+                myData.text = "Data: " +  ComboBox(event.target).selectedItem.data;
+            } 
+            */   
+                  
+
+	]]>
+</mx:Script>
+
+<mx:HTTPService id="emailService" url="php/sendthis.php" method="POST" resultFormat="xml" result="emailResult()" useProxy="false"/>
+	<mx:EmailValidator id="mailValidator"
+		source="{senderEmail}" property="text" 
+		requiredFieldError="Enter your email [正しいe-mailアドレスをご入力ください]" required="true" />
+	<mx:StringValidator id="nameValidator"  
+		source="{senderName}" property="text" 
+		requiredFieldError="Enter your name [お名前をご入力ください]" required="true"/>
+	<mx:StringValidator id="addressValidator"  
+		source="{senderAddress}" property="text" 
+		requiredFieldError="Enter your Address [住所をご入力ください]" required="true"/>	
+	<mx:StringValidator id="telValidator"  
+		source="{senderTel}" property="text" 
+		requiredFieldError="Enter your Telephone [住所をご入力ください]" required="true"/>
+	<onin:FieldComparisonValidator id="valConfirmEmail" source="{senderConfirmEmail}" property="text" destination="{senderEmail}" destinationProperty="text" required="true" />	
+
+ <mx:CurrencyFormatter id="currencyFormatter"
+            currencySymbol="$"
+            useThousandsSeparator="true"
+            precision="2" />
+
+<mx:DateFormatter id="dtf1" formatString="MMMM DD YYYY"/>
+<mx:DateFormatter id="dtf2" formatString="DD/MM/YY"/>
+
+	<mx:Panel width="682" height="930" layout="absolute" id="reservationBox" title="Reservation" horizontalAlign="center" color="#020202" backgroundColor="#FEFEFE" fontSize="12" fontWeight="bold" fontFamily="Arial" horizontalCenter="0">
+		<mx:Label x="270" y="402" fontSize="11"/>
+		<mx:Image x="350" y="50" autoLoad="true" source="assets/flowerForForm.png"/>
+		<mx:Form height="867" width="648" x="7" y="10">
+			<mx:FormItem label="お名前 （ローマ字:)" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:TextInput width="404" borderColor="#0A0A0A" borderStyle="solid" borderThickness="2" id="senderName"/>
+			</mx:FormItem>
+			<mx:FormItem label="メールアドレス:" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:TextInput width="150" borderColor="#0A0A0A" borderStyle="solid" borderThickness="2" id="senderEmail"/>
+			</mx:FormItem>
+			<mx:FormItem label="メールアドレス（確認）:" width="609" height="35" horizontalAlign="left" required="true" fontSize="11">
+				<mx:TextInput width="150" borderColor="#0A0A0A" borderStyle="solid" borderThickness="2" id="senderConfirmEmail"/>
+			</mx:FormItem>
+			<mx:FormItem label="性別:" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:ComboBox editable="false" dataProvider="{sex}" close="" id="senderSex"></mx:ComboBox>
+			</mx:FormItem>
+			<mx:FormItem label="住所:" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:TextInput width="150" borderColor="#0A0A0A" borderStyle="solid" borderThickness="2" id="senderAddress"/>
+			</mx:FormItem>
+			<mx:FormItem label="TEL:" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:TextInput width="150" borderColor="#0A0A0A" borderStyle="solid" borderThickness="2" id="senderTel"/>
+			</mx:FormItem>
+			<mx:FormItem label="Check in day(日程):" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:DateField width="226" borderColor="#000000" labelFunction="fnDtfLblFunct" parseFunction="fnDtfPrsFunct" cornerRadius="2" fillAlphas="[1.0, 1.0]" fillColors="[#CB9696, #8E1111, #533737, #533737]" showToday="true" id="checkIn" close="calculate()" />
+			</mx:FormItem>
+			<mx:FormItem label="Check out day:(日程)" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:DateField width="226" borderColor="#000000" labelFunction="fnDtfLblFunct" parseFunction="fnDtfPrsFunct" cornerRadius="2" fillAlphas="[1.0, 1.0]" fillColors="[#CB9696, #8E1111, #533737, #533737]" showToday="true" id="checkOut" close="calculate()" />
+			</mx:FormItem>
+			<mx:FormItem label="チェックイン予定時間 :" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:ComboBox editable="false" dataProvider="{timeCome}"  id="senderTimeCome"></mx:ComboBox>
+			</mx:FormItem>
+			
+				
+			
+			<mx:FormItem label="人数:" width="248" height="35" horizontalAlign="left" required="false">
+				<mx:NumericStepper id="senderHowmany" minimum="1" maximum="500" change="calculate()" />
+			</mx:FormItem>
+			<mx:FormItem label="プライスプラン:" width="609" height="35" horizontalAlign="left" required="true">
+				<mx:ComboBox editable="false" dataProvider="{priceBran}" close="calculate()"  id="senderPriceBran"></mx:ComboBox>
+			</mx:FormItem>
+			
+				<mx:RichTextEditor title="Memo" width="611" id="senderMemo" fontSize="12" height="284">
+				</mx:RichTextEditor>
+			
+			<mx:FormItem label="トータルプライス:" width="298" height="35" horizontalAlign="right" required="false" fontSize="16">
+				<mx:TextInput width="150" borderColor="#0A0A0A" borderStyle="solid" borderThickness="2" id="senderTotal" enabled="true" editable="false"/>
+			</mx:FormItem>
+			
+				<mx:Button label="送信" click="sendMail()" width="87" height="35" fontSize="15" borderColor="#131415"/>
+			
+		
+			
+		</mx:Form>
+	</mx:Panel>
+	
+</mx:Application>
